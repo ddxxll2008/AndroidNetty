@@ -74,7 +74,7 @@ public class ControlClient extends SimpleChannelInboundHandler<MessageProtocol> 
     private volatile Bootstrap bootstrap;
 
     private Handler mHandler;
-    private List<StatusListener> listeners;
+    private List<StatusListener> listeners = new ArrayList<>();
 
     public void init(String host, int port) throws ServerException {
         messageQueque = new ArrayBlockingQueue<MessageProtocol>(100);
@@ -83,7 +83,6 @@ public class ControlClient extends SimpleChannelInboundHandler<MessageProtocol> 
         group = new NioEventLoopGroup();
         protoCodec = new TcpProtoCodec();
         mHandler = new Handler();
-        listeners = new ArrayList<>();
         this.serverIp = host;
         this.serverPort = port;
         try {
