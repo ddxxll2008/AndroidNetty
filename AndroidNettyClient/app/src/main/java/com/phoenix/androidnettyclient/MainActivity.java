@@ -42,8 +42,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void initView() {
         ipEditText = findViewById(R.id.et_ip);
+        ipEditText.setSelection(ipEditText.getText().length());
         portEditText = findViewById(R.id.et_port);
+        portEditText.setSelection(portEditText.getText().length());
         sendMessage = findViewById(R.id.et_send_message);
+        sendMessage.setSelection(sendMessage.getText().length());
 
         connectStatus = findViewById(R.id.iv_status);
         connectBtn = findViewById(R.id.btn_connect);

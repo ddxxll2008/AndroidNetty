@@ -43,7 +43,7 @@ public class ClientWrapper {
         this.serverHost = serverHost;
         this.serverPort = serverPort;
         status = ServerStatus.Initialize;
-        clients = new ArrayList<io.netty.channel.Channel>();
+        clients = new ArrayList<>();
     }
 
     public void init() throws ServerException {
@@ -56,46 +56,42 @@ public class ClientWrapper {
                     ClientWrapper.this.status = status;
                     ClientWrapper.this.notifyStatusChange(status);
                 } else {
-                    mHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            EventBus.getDefault().post(new MessageEvent("disconnect"));
-                        }
-                    });
+                    EventBus.getDefault().post(new MessageEvent("disconnect"));
                 }
             }
         });
         controlClient.init(serverHost, serverPort);
     }
 
-    /**
-     * close connect
-     *
-     * @param ctx
-     * @throws Exception
-     */
-    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
-        clients.remove(ctx.channel());
-        Log.d(TAG, "handlerRemoved: ");
-    }
-
-    public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
-        clients.add(ctx.channel());
-        //notify current status
-        ctx.channel().writeAndFlush(new MessageProtocol(Constants.STATE_CHANGE_INDEX));
-        Log.d(TAG, "handlerAdded: ");
-    }
-
-    /**
-     * process message
-     * @param ctx
-     * @param message
-     * @throws Exception
-     */
-    protected void processMessage(ChannelHandlerContext ctx, MessageProtocol message) throws Exception {
-        Log.d(TAG, "processMessage: " + message.getMessageContent());
-        controlClient.sendMessage(message.getMessageContent());
-    }
+//    /**
+//     * close connect
+//     *
+//     * @param ctx
+//     * @throws Exception
+//     */
+//    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
+//        clients.remove(ctx.channel());
+//        Log.d(TAG, "handlerRemoved: ");
+//    }
+//
+//    public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+//        clients.add(ctx.channel());
+//        //notify current status
+//        ctx.channel().writeAndFlush(new MessageProtocol(Constants.STATE_CHANGE_INDEX));
+//        Log.d(TAG, "handlerAdded: ");
+//    }
+//
+//    /**
+//     * process message
+//     *
+//     * @param ctx
+//     * @param message
+//     * @throws Exception
+//     */
+//    protected void processMessage(ChannelHandlerContext ctx, MessageProtocol message) throws Exception {
+//        Log.d(TAG, "processMessage: " + message.getMessageContent());
+//        controlClient.sendMessage(message.getMessageContent());
+//    }
 
     /**
      * notify client server status change

@@ -32,6 +32,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
 
 /**
  * client
@@ -77,7 +78,7 @@ public class ControlClient extends SimpleChannelInboundHandler<MessageProtocol> 
     private List<StatusListener> listeners = new ArrayList<>();
 
     public void init(String host, int port) throws ServerException {
-        messageQueque = new ArrayBlockingQueue<MessageProtocol>(100);
+        messageQueque = new ArrayBlockingQueue<>(100);
         timerExecutorService = new ScheduledThreadPoolExecutor(20);
         type2sendCountMap = new HashMap<>();
         group = new NioEventLoopGroup();
@@ -97,12 +98,12 @@ public class ControlClient extends SimpleChannelInboundHandler<MessageProtocol> 
     }
 
     private Bootstrap configureBootstrap(Bootstrap bootstrap, EventLoopGroup group) {
-        bootstrap.group(group).channel(NioServerSocketChannel.class)
+        bootstrap.group(group).channel(NioSocketChannel.class)
                 .remoteAddress(serverIp, serverPort)
                 .handler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     protected void initChannel(SocketChannel socketChannel) throws Exception {
-                        ChannelPipeline pipeline = channel.pipeline();
+                        ChannelPipeline pipeline = socketChannel.pipeline();
                         //protocol codec
                         pipeline.addLast(protoCodec);
                         //handle message
@@ -114,19 +115,19 @@ public class ControlClient extends SimpleChannelInboundHandler<MessageProtocol> 
 
     private void doConnect(Bootstrap bootstrap) {
         try {
-            final ChannelFuture future = bootstrap.connect();
+            ChannelFuture future = bootstrap.connect();
             future.addListener(new ChannelFutureListener() {
                 @Override
                 public void operationComplete(ChannelFuture channelFuture) throws Exception {
-                    if (future.isSuccess()) {
+                    if (channelFuture.isSuccess()) {
                         Log.d(TAG, "operationComplete: Started Tcp Client: " + serverIp);
                         EventBus.getDefault().post(new MessageEvent("Started Tcp Client: " + serverIp));
                     } else {
                         Log.d(TAG, "operationComplete: Started Tcp Client Failed");
                         EventBus.getDefault().post(new MessageEvent("Started Tcp Client Failed"));
                     }
-                    if (future.cause() != null) {
-                        future.cause().printStackTrace();
+                    if (channelFuture.cause() != null) {
+                        channelFuture.cause().printStackTrace();
                     }
                 }
             });
@@ -138,7 +139,7 @@ public class ControlClient extends SimpleChannelInboundHandler<MessageProtocol> 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         this.channel = ctx.channel();
-        //
+        //re-connect success
         try {
             this.connect();
         } catch (ServerException e) {
