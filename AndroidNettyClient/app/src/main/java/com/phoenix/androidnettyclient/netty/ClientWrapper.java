@@ -29,14 +29,8 @@ public class ClientWrapper {
     private int status;
     private List<Channel> clients;
 
-    private Handler mHandler;
-
     public static void setInstance(ClientWrapper wrapper) {
         clientWrapper = wrapper;
-    }
-
-    public static ClientWrapper instance() {
-        return clientWrapper;
     }
 
     public ClientWrapper(String serverHost, int serverPort) {
@@ -48,7 +42,6 @@ public class ClientWrapper {
 
     public void init() throws ServerException {
         controlClient = new ControlClient();
-        mHandler = new Handler();
         controlClient.registerStatusListener(new StatusListener() {
             @Override
             public void onStatusChange(int status) {
@@ -62,36 +55,6 @@ public class ClientWrapper {
         });
         controlClient.init(serverHost, serverPort);
     }
-
-//    /**
-//     * close connect
-//     *
-//     * @param ctx
-//     * @throws Exception
-//     */
-//    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
-//        clients.remove(ctx.channel());
-//        Log.d(TAG, "handlerRemoved: ");
-//    }
-//
-//    public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
-//        clients.add(ctx.channel());
-//        //notify current status
-//        ctx.channel().writeAndFlush(new MessageProtocol(Constants.STATE_CHANGE_INDEX));
-//        Log.d(TAG, "handlerAdded: ");
-//    }
-//
-//    /**
-//     * process message
-//     *
-//     * @param ctx
-//     * @param message
-//     * @throws Exception
-//     */
-//    protected void processMessage(ChannelHandlerContext ctx, MessageProtocol message) throws Exception {
-//        Log.d(TAG, "processMessage: " + message.getMessageContent());
-//        controlClient.sendMessage(message.getMessageContent());
-//    }
 
     /**
      * notify client server status change

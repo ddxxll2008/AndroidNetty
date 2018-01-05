@@ -74,7 +74,6 @@ public class ControlClient extends SimpleChannelInboundHandler<MessageProtocol> 
     private EventLoopGroup group;
     private volatile Bootstrap bootstrap;
 
-    private Handler mHandler;
     private List<StatusListener> listeners = new ArrayList<>();
 
     public void init(String host, int port) throws ServerException {
@@ -83,7 +82,6 @@ public class ControlClient extends SimpleChannelInboundHandler<MessageProtocol> 
         type2sendCountMap = new HashMap<>();
         group = new NioEventLoopGroup();
         protoCodec = new TcpProtoCodec();
-        mHandler = new Handler();
         this.serverIp = host;
         this.serverPort = port;
         try {
@@ -180,7 +178,7 @@ public class ControlClient extends SimpleChannelInboundHandler<MessageProtocol> 
             return;
         }
         // if session is not created, need to connect first
-        if (!(Constants.CONNECT_INDEX == message.getMessageContent())) {
+        if (!(Constants.CONNECT_INDEX == message.getMessageContent()) && !isConnected) {
             Log.d(TAG, "send: not connect yet");
             return;
         }
@@ -194,7 +192,7 @@ public class ControlClient extends SimpleChannelInboundHandler<MessageProtocol> 
                 type2sendCountMap.put(type, 1 + type2sendCountMap.get(type));
             } else {
                 Log.d(TAG, "send: send count more than 5");
-                //TODO error handle about resend count more than 5
+                EventBus.getDefault().post("resend count more than 5, server not response");
                 return;
             }
 
@@ -287,13 +285,7 @@ public class ControlClient extends SimpleChannelInboundHandler<MessageProtocol> 
         this.connectedTime = System.currentTimeMillis();
         this.messageQueque.clear();
         this.type2sendCountMap.clear();
-
-        mHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                EventBus.getDefault().post(new MessageEvent("connect"));
-            }
-        });
+        EventBus.getDefault().post(new MessageEvent("connect"));
     }
 
     /**
