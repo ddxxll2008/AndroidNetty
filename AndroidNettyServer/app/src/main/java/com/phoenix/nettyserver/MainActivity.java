@@ -7,6 +7,7 @@ import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.phoenix.nettyserver.netty.AppServer;
@@ -19,6 +20,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView ipTextView;
     private TextView portTextView;
     private TextView messageTextView;
+    private ImageView connectStatus;
 
     private AppServer appServer;
 
@@ -36,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
         ipTextView = findViewById(R.id.tv_ip);
         portTextView = findViewById(R.id.tv_port);
         messageTextView = findViewById(R.id.tv_message);
+        connectStatus = findViewById(R.id.iv_status);
     }
 
     /**
@@ -61,14 +64,28 @@ public class MainActivity extends AppCompatActivity {
         int ipAddress = wifiInfo.getIpAddress();
         String ip = intToIp(ipAddress);
         ipTextView.setText(ip);
-        portTextView.setText("端口："+ appServer.getPort());
+        portTextView.setText("端口：" + appServer.getPort());
     }
 
     private String intToIp(int i) {
-        return (i & 0xFF ) + "." +
-                ((i >> 8 ) & 0xFF) + "." +
-                ((i >> 16 ) & 0xFF) + "." +
-                ( i >> 24 & 0xFF) ;
+        return (i & 0xFF) + "." +
+                ((i >> 8) & 0xFF) + "." +
+                ((i >> 16) & 0xFF) + "." +
+                (i >> 24 & 0xFF);
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onConnectEvent(String connectIndex) {
+        switch (connectIndex) {
+            case "connect":
+                connectStatus.setBackgroundResource(R.color.green);
+                break;
+            case "disconnect":
+                connectStatus.setBackgroundResource(R.color.red);
+                break;
+            default:
+                break;
+        }
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)

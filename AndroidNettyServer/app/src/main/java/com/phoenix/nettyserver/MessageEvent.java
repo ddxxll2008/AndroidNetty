@@ -5,7 +5,7 @@ package com.phoenix.nettyserver;
  */
 
 public class MessageEvent {
-    String messageContent;
+    private String messageContent;
 
     public MessageEvent(String messageContent) {
         this.messageContent = messageContent;

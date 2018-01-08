@@ -7,6 +7,8 @@ import com.phoenix.nettyserver.MessageEvent;
 
 import org.greenrobot.eventbus.EventBus;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
@@ -14,7 +16,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
  * App Server handle
  * Created by phoenix on 2017/12/28.
  */
-
+@ChannelHandler.Sharable
 public class AppServerHandler extends SimpleChannelInboundHandler<MessageProtocol> {
     private static final String TAG = "AppServerHandler";
     private Context mContext;
@@ -32,6 +34,7 @@ public class AppServerHandler extends SimpleChannelInboundHandler<MessageProtoco
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
         Log.i(TAG, "handlerAdded:" + ctx.channel());
+        EventBus.getDefault().post("connect");
         super.handlerAdded(ctx);
     }
 
@@ -44,6 +47,7 @@ public class AppServerHandler extends SimpleChannelInboundHandler<MessageProtoco
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
         Log.i(TAG, "handlerRemoved:" + ctx.channel());
+        EventBus.getDefault().post("disconnect");
         super.handlerRemoved(ctx);
     }
 
@@ -69,14 +73,18 @@ public class AppServerHandler extends SimpleChannelInboundHandler<MessageProtoco
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, MessageProtocol messageProtocol) throws Exception {
         Log.d(TAG, "channelRead0: " + messageProtocol.getMessageContent());
         //handle message
-        handleMessage(messageProtocol.getMessageContent());
+        handleMessage(channelHandlerContext.channel(), messageProtocol.getMessageContent());
     }
 
     /**
      * Handle message here
      */
-    private void handleMessage(String messageContent) {
+    private void handleMessage(Channel channel, String messageContent) {
         EventBus.getDefault().post(new MessageEvent(messageContent));
+        //response, send message to client
+        MessageProtocol messageProtocol= new MessageProtocol();
+        messageProtocol.setMessageContent(messageContent);
+        channel.writeAndFlush(messageProtocol);
     }
 
     /**
