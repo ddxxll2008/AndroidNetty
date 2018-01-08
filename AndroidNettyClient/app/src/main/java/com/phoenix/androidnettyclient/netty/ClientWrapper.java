@@ -49,7 +49,7 @@ public class ClientWrapper {
                     ClientWrapper.this.status = status;
                     ClientWrapper.this.notifyStatusChange(status);
                 } else {
-                    EventBus.getDefault().post(new MessageEvent("disconnect"));
+                    EventBus.getDefault().post("disconnect");
                 }
             }
         });

@@ -267,6 +267,14 @@ public class ControlClient extends SimpleChannelInboundHandler<MessageProtocol> 
         }
 
         //process message
+        processServerMessage(messageProtocol);
+    }
+
+    /**
+     * process server response message
+     * @param messageProtocol
+     */
+    private void processServerMessage(MessageProtocol messageProtocol) {
         switch (messageProtocol.getMessageContent()) {
             case Constants.CONNECT_INDEX:
                 this.onConnected(messageProtocol);
@@ -275,6 +283,7 @@ public class ControlClient extends SimpleChannelInboundHandler<MessageProtocol> 
                 this.onStatusChange(messageProtocol);
                 break;
             default:
+                EventBus.getDefault().post(new MessageEvent(messageProtocol.getMessageContent()));
                 break;
         }
     }
@@ -285,7 +294,7 @@ public class ControlClient extends SimpleChannelInboundHandler<MessageProtocol> 
         this.connectedTime = System.currentTimeMillis();
         this.messageQueque.clear();
         this.type2sendCountMap.clear();
-        EventBus.getDefault().post(new MessageEvent("connect"));
+        EventBus.getDefault().post("connect");
     }
 
     /**

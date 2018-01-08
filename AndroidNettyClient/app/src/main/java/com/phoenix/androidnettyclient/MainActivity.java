@@ -85,7 +85,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onMessageEvent(MessageEvent messageEvent) {
         String message = messageEvent.getMessageContent();
-        Snackbar.make(ipEditText, message, Snackbar.LENGTH_LONG).show();
+        Snackbar.make(ipEditText, "server receive: "+ message, Snackbar.LENGTH_LONG).show();
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onConnectEvent(String message) {
         switch (message) {
             case "disconnect":
                 connectStatus.setBackgroundResource(R.color.red);
