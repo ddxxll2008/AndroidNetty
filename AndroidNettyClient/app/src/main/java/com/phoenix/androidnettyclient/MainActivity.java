@@ -1,26 +1,18 @@
 package com.phoenix.androidnettyclient;
 
-import android.graphics.Color;
-import android.os.Message;
 import android.support.design.widget.Snackbar;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.Toast;
 
-import com.phoenix.androidnettyclient.netty.ClientWrapper;
 import com.phoenix.androidnettyclient.netty.ControlClient;
-import com.phoenix.androidnettyclient.netty.ServerException;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
-
-import java.security.SecureRandom;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
     private EditText ipEditText;
@@ -75,14 +67,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         try {
             String serverHostParam = ipEditText.getText().toString().trim();
             int serverPortParam = Integer.valueOf(portEditText.getText().toString().trim());
-//            clientWrapper = new ClientWrapper(serverHostParam, serverPortParam);
-//            clientWrapper.init();
             controlClient = ControlClient.getInstance();
             controlClient.connectServer(serverHostParam, serverPortParam);
-        } catch (ServerException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
-//        ClientWrapper.setInstance(clientWrapper);
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -96,7 +85,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (message) {
             case "disconnect":
                 connectStatus.setBackgroundResource(R.color.red);
-                Snackbar.make(ipEditText, "disconnect", Snackbar.LENGTH_LONG).show();
                 break;
             case "connect":
                 connectStatus.setBackgroundResource(R.color.green);

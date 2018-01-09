@@ -1,11 +1,11 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 26
+    compileSdkVersion 27
     defaultConfig {
         applicationId "com.phoenix.androidnettyclient"
         minSdkVersion 19
-        targetSdkVersion 26
+        targetSdkVersion 27
         versionCode 1
         versionName "1.0"
     }
@@ -15,11 +15,19 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    packagingOptions {
+        exclude 'META-INF/INDEX.LIST'
+        exclude 'META-INF/io.netty.versions.properties'
+    }
 }
 
 dependencies {
     implementation 'com.android.support:appcompat-v7:26.1.0'
-    implementation files('libs/netty-all-4.1.15.Final.jar')
     compile 'org.greenrobot:eventbus:3.1.1'
     compile 'com.android.support:design:27.0.0'
+    implementation files('libs/netty-buffer-4.1.19.Final.jar')
+    implementation files('libs/netty-codec-4.1.19.Final.jar')
+    implementation files('libs/netty-transport-4.1.19.Final.jar')
+    implementation files('libs/netty-common-4.1.19.Final.jar')
+    implementation files('libs/netty-resolver-4.1.19.Final.jar')
 }

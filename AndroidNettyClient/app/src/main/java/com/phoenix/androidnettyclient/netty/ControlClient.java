@@ -1,6 +1,5 @@
 package com.phoenix.androidnettyclient.netty;
 
-import android.os.Handler;
 import android.util.Log;
 
 import com.phoenix.androidnettyclient.Constants;
@@ -8,9 +7,7 @@ import com.phoenix.androidnettyclient.MessageEvent;
 
 import org.greenrobot.eventbus.EventBus;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
@@ -31,7 +28,6 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
 /**
@@ -56,8 +52,6 @@ public class ControlClient extends SimpleChannelInboundHandler<MessageProtocol> 
     private final long timeoutTime = 2000;
     private Channel channel;
     private boolean isConnected = false;
-    private volatile int serverStatus;
-    private long connectedTime = 0;
 
     /**
      * Timing task, used to deal with timeout re-send
@@ -76,9 +70,7 @@ public class ControlClient extends SimpleChannelInboundHandler<MessageProtocol> 
     private EventLoopGroup group;
     private volatile Bootstrap bootstrap;
 
-    private List<StatusListener> listeners = new ArrayList<>();
-
-    public static ControlClient getInstance () throws ServerException {
+    public static ControlClient getInstance () throws Exception {
         if (instance == null) {
             instance = new ControlClient();
             instance.init();
@@ -94,7 +86,7 @@ public class ControlClient extends SimpleChannelInboundHandler<MessageProtocol> 
         protoCodec = new TcpProtoCodec();
     }
 
-    public void connectServer (String host, int port) throws ServerException  {
+    public void connectServer (String host, int port) throws Exception  {
         this.serverIp = host;
         this.serverPort = port;
         try {
@@ -104,7 +96,7 @@ public class ControlClient extends SimpleChannelInboundHandler<MessageProtocol> 
             doConnect(bootstrap);
         } catch (Exception e) {
             e.printStackTrace();
-            throw new ServerException("connect remote control server error!", e.getCause());
+            throw new Exception("connect remote control server error!", e.getCause());
         }
     }
 
@@ -153,12 +145,12 @@ public class ControlClient extends SimpleChannelInboundHandler<MessageProtocol> 
         //re-connect success
         try {
             this.connect();
-        } catch (ServerException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private void connect() throws ServerException {
+    private void connect() throws Exception {
         while (!isConnectionReady()) {
             try {
                 Thread.sleep(100);
@@ -181,11 +173,11 @@ public class ControlClient extends SimpleChannelInboundHandler<MessageProtocol> 
         return true;
     }
 
-    private synchronized void send(MessageProtocol message) throws ServerException {
+    private synchronized void send(MessageProtocol message) throws Exception {
         send(message, true);
     }
 
-    private synchronized void send(final MessageProtocol message, boolean autoResend) throws ServerException {
+    private synchronized void send(final MessageProtocol message, boolean autoResend) throws Exception {
         if (!isConnectionReady()) {
             Log.d(TAG, "send: not connect");
             return;
@@ -218,7 +210,7 @@ public class ControlClient extends SimpleChannelInboundHandler<MessageProtocol> 
                         if (client.type2sendCountMap.containsKey(type)) {
                             try {
                                 client.send(message, true);
-                            } catch (ServerException e) {
+                            } catch (Exception e) {
                                 e.printStackTrace();
                             }
                         }
@@ -235,10 +227,8 @@ public class ControlClient extends SimpleChannelInboundHandler<MessageProtocol> 
     }
 
     /**
-     * Calls {@link ChannelHandlerContext#fireChannelUnregistered()} to forward
-     * to the next {@link ChannelInboundHandler} in the {@link ChannelPipeline}.
-     * <p>
      * Sub-classes may override this method to change behavior.
+     * listen connect status
      *
      * @param ctx
      */
@@ -246,27 +236,16 @@ public class ControlClient extends SimpleChannelInboundHandler<MessageProtocol> 
     public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
         // 状态重置
         isConnected = false;
-        this.serverStatus = -1;
-        this.notifyStatusChange();
         EventBus.getDefault().post("disconnect");
 
-//        final EventLoop loop = ctx.channel().eventLoop();
-//        loop.schedule(new Runnable() {
-//            @Override
-//            public void run() {
-//                doConnect(configureBootstrap(new Bootstrap(), loop));
-//            }
-//        }, 1, TimeUnit.SECONDS);
-    }
-
-    private void notifyStatusChange() {
-        for (StatusListener listener : listeners) {
-            listener.onStatusChange(this.serverStatus);
-        }
-    }
-
-    public void registerStatusListener(StatusListener listener) {
-        this.listeners.add(listener);
+        //auto reconnect
+        final EventLoop loop = ctx.channel().eventLoop();
+        loop.schedule(new Runnable() {
+            @Override
+            public void run() {
+                doConnect(configureBootstrap(new Bootstrap(), loop));
+            }
+        }, 1, TimeUnit.SECONDS);
     }
 
     @Override
@@ -293,9 +272,6 @@ public class ControlClient extends SimpleChannelInboundHandler<MessageProtocol> 
             case Constants.CONNECT_INDEX:
                 this.onConnected(messageProtocol);
                 break;
-            case Constants.STATE_CHANGE_INDEX:
-                this.onStatusChange(messageProtocol);
-                break;
             default:
                 EventBus.getDefault().post(new MessageEvent(messageProtocol.getMessageContent()));
                 break;
@@ -305,24 +281,9 @@ public class ControlClient extends SimpleChannelInboundHandler<MessageProtocol> 
     private void onConnected(MessageProtocol messageProtocol) {
         Log.d(TAG, "onConnected: "+ messageProtocol.getMessageContent());
         this.isConnected = true;
-        this.connectedTime = System.currentTimeMillis();
         this.messageQueque.clear();
         this.type2sendCountMap.clear();
         EventBus.getDefault().post("connect");
-    }
-
-    /**
-     * server status change
-     * @param messageProtocol
-     */
-    private void onStatusChange(MessageProtocol messageProtocol) {
-        //notify
-        notifyStatusChange();
-
-        //TODO send wait message, To be optimized
-        if (this.serverStatus > ServerStatus.Ready) {
-            sendQueqeMessage();
-        }
     }
 
     private void sendQueqeMessage() {
@@ -336,7 +297,7 @@ public class ControlClient extends SimpleChannelInboundHandler<MessageProtocol> 
                 messageProtocol = messageQueque.take();
                 try {
                     this.send(messageProtocol);
-                } catch (ServerException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
                 sendQueqeMessage();
@@ -351,7 +312,7 @@ public class ControlClient extends SimpleChannelInboundHandler<MessageProtocol> 
         MessageProtocol messageProtocol = new MessageProtocol(messageContent);
         try {
             this.send(messageProtocol);
-        } catch (ServerException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
