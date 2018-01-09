@@ -13,6 +13,7 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.phoenix.androidnettyclient.netty.ClientWrapper;
+import com.phoenix.androidnettyclient.netty.ControlClient;
 import com.phoenix.androidnettyclient.netty.ServerException;
 
 import org.greenrobot.eventbus.EventBus;
@@ -30,7 +31,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Button connectBtn;
     private Button sendBtn;
 
-    private ClientWrapper clientWrapper;
+    private ControlClient controlClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,7 +63,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 connectServer();
                 break;
             case R.id.btn_send:
-                clientWrapper.sendMessage(sendMessage.getText().toString().trim());
+                controlClient.sendMessage(sendMessage.getText().toString().trim());
                 break;
             default:
                 break;
@@ -74,12 +75,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         try {
             String serverHostParam = ipEditText.getText().toString().trim();
             int serverPortParam = Integer.valueOf(portEditText.getText().toString().trim());
-            clientWrapper = new ClientWrapper(serverHostParam, serverPortParam);
-            clientWrapper.init();
+//            clientWrapper = new ClientWrapper(serverHostParam, serverPortParam);
+//            clientWrapper.init();
+            controlClient = ControlClient.getInstance();
+            controlClient.connectServer(serverHostParam, serverPortParam);
         } catch (ServerException e) {
             e.printStackTrace();
         }
-        ClientWrapper.setInstance(clientWrapper);
+//        ClientWrapper.setInstance(clientWrapper);
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -93,6 +96,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (message) {
             case "disconnect":
                 connectStatus.setBackgroundResource(R.color.red);
+                Snackbar.make(ipEditText, "disconnect", Snackbar.LENGTH_LONG).show();
                 break;
             case "connect":
                 connectStatus.setBackgroundResource(R.color.green);

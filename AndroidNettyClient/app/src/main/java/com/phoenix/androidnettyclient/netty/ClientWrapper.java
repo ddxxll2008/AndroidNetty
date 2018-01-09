@@ -29,6 +29,17 @@ public class ClientWrapper {
     private int status;
     private List<Channel> clients;
 
+    public static ClientWrapper getInstance() {
+        if (clientWrapper == null) {
+            try {
+                clientWrapper.init();
+            } catch (ServerException e) {
+                e.printStackTrace();
+            }
+        }
+        return clientWrapper;
+    }
+
     public static void setInstance(ClientWrapper wrapper) {
         clientWrapper = wrapper;
     }
@@ -53,7 +64,7 @@ public class ClientWrapper {
                 }
             }
         });
-        controlClient.init(serverHost, serverPort);
+        controlClient.init();
     }
 
     /**

@@ -42,6 +42,8 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 public class ControlClient extends SimpleChannelInboundHandler<MessageProtocol> {
     private static final String TAG = "ControlClient";
 
+    private static ControlClient instance;
+
     private TcpProtoCodec protoCodec;
 
     ArrayBlockingQueue<MessageProtocol> messageQueque;
@@ -76,12 +78,23 @@ public class ControlClient extends SimpleChannelInboundHandler<MessageProtocol> 
 
     private List<StatusListener> listeners = new ArrayList<>();
 
-    public void init(String host, int port) throws ServerException {
+    public static ControlClient getInstance () throws ServerException {
+        if (instance == null) {
+            instance = new ControlClient();
+            instance.init();
+        }
+        return instance;
+    }
+
+    public void init() {
         messageQueque = new ArrayBlockingQueue<>(100);
         timerExecutorService = new ScheduledThreadPoolExecutor(20);
         type2sendCountMap = new HashMap<>();
         group = new NioEventLoopGroup();
         protoCodec = new TcpProtoCodec();
+    }
+
+    public void connectServer (String host, int port) throws ServerException  {
         this.serverIp = host;
         this.serverPort = port;
         try {
@@ -235,14 +248,15 @@ public class ControlClient extends SimpleChannelInboundHandler<MessageProtocol> 
         isConnected = false;
         this.serverStatus = -1;
         this.notifyStatusChange();
+        EventBus.getDefault().post("disconnect");
 
-        final EventLoop loop = ctx.channel().eventLoop();
-        loop.schedule(new Runnable() {
-            @Override
-            public void run() {
-                doConnect(configureBootstrap(new Bootstrap(), loop));
-            }
-        }, 1, TimeUnit.SECONDS);
+//        final EventLoop loop = ctx.channel().eventLoop();
+//        loop.schedule(new Runnable() {
+//            @Override
+//            public void run() {
+//                doConnect(configureBootstrap(new Bootstrap(), loop));
+//            }
+//        }, 1, TimeUnit.SECONDS);
     }
 
     private void notifyStatusChange() {
